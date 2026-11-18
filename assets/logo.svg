@@ -1,0 +1,37 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="tileFill" x1="0" y1="96" x2="0" y2="928" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#78BAB9"/>
+      <stop offset="0.55" stop-color="#6AB0AF"/>
+      <stop offset="1" stop-color="#5FA3A2"/>
+    </linearGradient>
+    <linearGradient id="gloss" x1="0" y1="96" x2="0" y2="520" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.10"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="bandFill" x1="0" y1="634" x2="0" y2="878" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#F1F1F4"/>
+    </linearGradient>
+    <clipPath id="tileClip"><rect x="96" y="96" width="832" height="832" rx="208"/></clipPath>
+    <filter id="tileShadow" x="-20%" y="-20%" width="140%" height="145%" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#1F4544" flood-opacity="0.22"/>
+      <feDropShadow dx="0" dy="16" stdDeviation="22" flood-color="#1F4544" flood-opacity="0.28"/>
+    </filter>
+    <filter id="raised" x="-20%" y="-20%" width="140%" height="150%" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="7" stdDeviation="7" flood-color="#2D5F5E" flood-opacity="0.38"/>
+    </filter>
+  </defs>
+  <rect x="96" y="96" width="832" height="832" rx="208" fill="url(#tileFill)" filter="url(#tileShadow)"/>
+  <rect x="96" y="96" width="832" height="424" fill="url(#gloss)" clip-path="url(#tileClip)"/>
+  <path d="M174 634H850Q878 634 878 662V720Q878 878 720 878H304Q146 878 146 720V662Q146 634 174 634Z" fill="url(#bandFill)" filter="url(#raised)"/>
+  <!-- Hopclick mark: two displays, a dotted hop trail and the cursor that lands on the second display -->
+  <g filter="url(#raised)">
+    <g stroke="#FFFFFF" stroke-width="40" stroke-linejoin="round" fill="none">
+      <rect x="180" y="384" width="268" height="186" rx="34"/>
+      <rect x="576" y="384" width="268" height="186" rx="34"/>
+    </g>
+    <path d="M314 336Q512 96 700 330" stroke="#FFFFFF" stroke-width="36" stroke-linecap="round" stroke-dasharray="0 70" fill="none"/>
+    <path d="M674 414V514L700 490L718 528L740 518L722 482H756Z" fill="#FFFFFF" stroke="#FFFFFF" stroke-width="14" stroke-linejoin="round"/>
+  </g>
+</svg>

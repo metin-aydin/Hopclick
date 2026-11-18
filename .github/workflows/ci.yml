@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+    branches: [master, development]
+  pull_request:
+
+# CI yalnız okur; gizli değer ve yazma yetkisi kullanmaz.
+permissions:
+  contents: read
+
+jobs:
+  # Tek zorunlu kontrol: birim testleri, sürüm/sürüm notu betikleri ve evrensel (arm64 + x86_64) paket derlemesi.
+  check:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Script tests
+        run: |
+          node dev/next-version.test.mjs
+          node dev/release-notes.test.mjs
+      - name: Unit tests
+        run: swift test
+      - name: Build app (universal, ad-hoc signed)
+        run: UNIVERSAL=1 scripts/build-app.sh "$(node dev/next-version.mjs)"
+      - name: Disk image
+        run: scripts/make-dmg.sh "$(node dev/next-version.mjs)"

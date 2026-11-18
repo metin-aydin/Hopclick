@@ -1,0 +1,157 @@
+# master dalına her birleştirmede yeni sürüm yayımlanır: sürüm numarası dev/next-version.mjs ile hesaplanır, macOS
+# evrensel (Apple Silicon + Intel) paketi Developer ID ile imzalanıp Apple onayından (notarize) geçer, zip (uygulama içi
+# güncelleme için) ve dmg (elle kurulum için) taslak sürüme yüklenir, hepsi bitince sürüm yayımlanır.
+# Sürüm notu birleştirilen PR'ın açıklamasıdır; açıklama boşsa son sürümden bu yana commit başlıkları yazılır.
+# Uygulama içi güncelleme yayımlanmış son sürümdeki Hopclick-<sürüm>.zip dosyasını indirir.
+name: Release
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Version
+        id: version
+        run: echo "version=$(node dev/next-version.mjs)" >> "$GITHUB_OUTPUT"
+      - name: Release notes
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          pr=$(gh api "repos/$GITHUB_REPOSITORY/commits/$GITHUB_SHA/pulls" \
+            --jq '[.[] | select(.merged_at != null)][0].number // empty')
+          body=""
+          if [ -n "$pr" ]; then
+            body=$(gh pr view "$pr" --json body --jq .body | node dev/release-notes.mjs)
+          fi
+          last=$(git tag --list 'v*' --sort=-v:refname | head -n 1)
+          if [ -z "$(printf '%s' "$body" | tr -d '[:space:]')" ]; then
+            body=$(git log ${last:+$last..}HEAD --no-merges --format='- %s')
+          fi
+          {
+            printf '%s\n' "$body"
+            if [ -n "$last" ]; then
+              printf '\n**Full changelog**: https://github.com/%s/compare/%s...v%s\n' \
+                "$GITHUB_REPOSITORY" "$last" "$VERSION"
+            fi
+          } > "$RUNNER_TEMP/notes.md"
+      - name: Draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          # Yarım kalmış önceki çalıştırmanın taslağı silinir.
+          if gh release view "v$VERSION" --json isDraft --jq .isDraft 2>/dev/null | grep -q true; then
+            gh release delete "v$VERSION" --yes
+          fi
+          gh release create "v$VERSION" --draft --target "$GITHUB_SHA" \
+            --title "Hopclick $VERSION" --notes-file "$RUNNER_TEMP/notes.md"
+
+  # İmza gizli değerleri `release` ortamındadır; ortam yalnız korunan dallardan (master) çalıştırılabilir.
+  # Gizli değerler yoksa yayın durur: imzasız uygulama Gatekeeper'a takılır ve kendini güncelleyemez.
+  build:
+    needs: prepare
+    environment: release
+    runs-on: macos-latest
+    env:
+      VERSION: ${{ needs.prepare.outputs.version }}
+      CSC_LINK: ${{ secrets.CSC_LINK }}
+      CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+      APPLE_ID: ${{ secrets.APPLE_ID }}
+      APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Check secrets
+        run: |
+          for name in CSC_LINK CSC_KEY_PASSWORD APPLE_ID APPLE_APP_SPECIFIC_PASSWORD APPLE_TEAM_ID; do
+            if [ -z "$(printenv "$name")" ]; then
+              echo "::error::Secret $name is missing in the release environment; the app cannot be signed."
+              exit 1
+            fi
+          done
+      - name: Import Developer ID certificate
+        run: |
+          keychain="$RUNNER_TEMP/signing.keychain-db"
+          password=$(uuidgen)
+          security create-keychain -p "$password" "$keychain"
+          security set-keychain-settings -lut 21600 "$keychain"
+          security unlock-keychain -p "$password" "$keychain"
+          # CSC_LINK, electron-builder'daki gibi base64 kodlu .p12 ya da indirilebilir bir adrestir.
+          case "$CSC_LINK" in
+            http*) curl -fsSL "$CSC_LINK" -o "$RUNNER_TEMP/cert.p12" ;;
+            *) printf '%s' "$CSC_LINK" | base64 --decode > "$RUNNER_TEMP/cert.p12" ;;
+          esac
+          security import "$RUNNER_TEMP/cert.p12" -k "$keychain" -P "$CSC_KEY_PASSWORD" -T /usr/bin/codesign
+          rm -f "$RUNNER_TEMP/cert.p12"
+          security set-key-partition-list -S apple-tool:,apple: -s -k "$password" "$keychain" >/dev/null
+          security list-keychains -d user -s "$keychain" $(security list-keychains -d user | tr -d '"')
+          identity=$(security find-identity -v -p codesigning "$keychain" \
+            | sed -n 's/.*"\(Developer ID Application: .*\)"/\1/p' | head -n 1)
+          if [ -z "$identity" ]; then
+            echo "::error::No Developer ID Application identity in CSC_LINK."
+            exit 1
+          fi
+          echo "SIGN_IDENTITY=$identity" >> "$GITHUB_ENV"
+      - name: Build and sign
+        run: UNIVERSAL=1 BUILD_NUMBER="$GITHUB_RUN_NUMBER" scripts/build-app.sh "$VERSION"
+      - name: Notarize app
+        run: |
+          ditto -c -k --keepParent build/Hopclick.app "$RUNNER_TEMP/notarize.zip"
+          xcrun notarytool submit "$RUNNER_TEMP/notarize.zip" --apple-id "$APPLE_ID" \
+            --password "$APPLE_APP_SPECIFIC_PASSWORD" --team-id "$APPLE_TEAM_ID" --wait
+          xcrun stapler staple build/Hopclick.app
+          ditto -c -k --keepParent build/Hopclick.app "build/Hopclick-$VERSION.zip"
+      - name: Disk image
+        run: |
+          scripts/make-dmg.sh "$VERSION"
+          codesign --force --timestamp --sign "$SIGN_IDENTITY" "build/Hopclick-$VERSION.dmg"
+          xcrun notarytool submit "build/Hopclick-$VERSION.dmg" --apple-id "$APPLE_ID" \
+            --password "$APPLE_APP_SPECIFIC_PASSWORD" --team-id "$APPLE_TEAM_ID" --wait
+          xcrun stapler staple "build/Hopclick-$VERSION.dmg"
+      - name: Upload
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "v$VERSION" "build/Hopclick-$VERSION.zip" "build/Hopclick-$VERSION.dmg" --clobber
+
+  publish:
+    needs: [prepare, build]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.prepare.outputs.version }}
+        run: gh release edit "v$VERSION" --repo "$GITHUB_REPOSITORY" --draft=false --latest
+
+  discard:
+    needs: [prepare, build]
+    if: failure() && needs.prepare.result == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.prepare.outputs.version }}
+        run: gh release delete "v$VERSION" --repo "$GITHUB_REPOSITORY" --yes
