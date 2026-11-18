@@ -19,6 +19,8 @@ permissions:
 
 jobs:
   prepare:
+    # Elle başlatma da yalnız master'dan çalışır; release ortamı ayrıca yalnız master'a açıktır.
+    if: github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.version.outputs.version }}
@@ -70,6 +72,7 @@ jobs:
   # Gizli değerler yoksa yayın durur: imzasız uygulama Gatekeeper'a takılır ve kendini güncelleyemez.
   build:
     needs: prepare
+    if: github.ref == 'refs/heads/master'
     environment: release
     runs-on: macos-latest
     env:
@@ -137,6 +140,7 @@ jobs:
 
   publish:
     needs: [prepare, build]
+    if: github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     steps:
       - name: Publish release

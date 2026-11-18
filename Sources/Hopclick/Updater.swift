@@ -143,16 +143,26 @@ final class Updater {
               bundle.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String == version
         else { throw UpdateError("unexpected package contents") }
 
+        guard verify(app, requirement: requirement(team: team)) else { throw UpdateError("signature check failed") }
+        return app
+    }
+
+    /// Code requirement for an update: same bundle identifier, signed by the same Developer ID team, notarized.
+    static func requirement(team: String) -> String {
+        "anchor apple generic and identifier \"\(Bundle.main.bundleIdentifier ?? "")\" "
+            + "and certificate leaf[subject.OU] = \"\(team)\" and notarized"
+    }
+
+    /// Strict validation of every architecture and all nested code; rejects symlinks or files outside the seal.
+    private static func verify(_ app: URL, requirement text: String) -> Bool {
         var code: SecStaticCode?
         var requirement: SecRequirement?
-        let text = "anchor apple generic and identifier \"\(bundle.bundleIdentifier!)\" "
-            + "and certificate leaf[subject.OU] = \"\(team)\""
-        guard SecStaticCodeCreateWithPath(app as CFURL, [], &code) == errSecSuccess, let code,
-              SecRequirementCreateWithString(text as CFString, [], &requirement) == errSecSuccess,
-              SecStaticCodeCheckValidity(code, SecCSFlags(rawValue: kSecCSCheckAllArchitectures), requirement)
-                == errSecSuccess
-        else { throw UpdateError("signature check failed") }
-        return app
+        let flags = SecCSFlags(rawValue: kSecCSCheckAllArchitectures | kSecCSCheckNestedCode | kSecCSStrictValidate
+                                   | (1 << 30) /* kSecCSEnforceRevocationChecks, not imported into Swift */)
+        return SecStaticCodeCreateWithPath(app as CFURL, [], &code) == errSecSuccess
+            && SecRequirementCreateWithString(text as CFString, [], &requirement) == errSecSuccess
+            && code != nil
+            && SecStaticCodeCheckValidity(code!, flags, requirement) == errSecSuccess
     }
 
     /// Developer ID team of a signed app; nil for unsigned or ad-hoc signed copies (development builds), which do
@@ -170,17 +180,23 @@ final class Updater {
     /// Replaces the running bundle once this process has exited, then opens the new copy. The bundle keeps its path
     /// and Developer ID requirement, so the Accessibility permission stays granted.
     private func relaunch(replacingWith newApp: URL) {
+        guard let team = Self.teamIdentifier(of: Bundle.main.bundleURL) else { return }
         let target = Bundle.main.bundleURL.path
+        // The copy in place is verified again; if it fails or anything goes wrong, the old app is put back.
         let script = """
         while kill -0 "$1" 2>/dev/null; do sleep 0.2; done
-        rm -rf "$2.old" && mv "$2" "$2.old" && /usr/bin/ditto "$3" "$2" && rm -rf "$2.old" \
+        rm -rf "$2.old" && mv "$2" "$2.old" \
+          && /usr/bin/ditto "$3" "$2" \
+          && /usr/bin/codesign --verify --deep --strict -R="$4" "$2" \
+          && rm -rf "$2.old" \
           || { rm -rf "$2"; mv "$2.old" "$2"; }
         rm -rf "$(dirname "$3")"
         /usr/bin/open "$2"
         """
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/bin/sh")
-        process.arguments = ["-c", script, "hopclick-update", String(getpid()), target, newApp.path]
+        process.arguments = ["-c", script, "hopclick-update", String(getpid()), target, newApp.path,
+                             Self.requirement(team: team)]
         do {
             try process.run()
             NSApp.terminate(nil)

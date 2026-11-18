@@ -54,3 +54,7 @@ açıp URL'yi verecek; klasör boş olmadığı için geçici klasöre klonlanı
   (önce/sonra, nasıl çalışır, menü), CI ve sürüm iş akışları, PR şablonu, MIT lisansı.
 - Kullanıcının yapması gereken: `release` ortamına imza gizli değerlerini girmek (JumpDesk'tekiyle aynı 5 değer).
   Girilmeden `master`'a birleşen PR'ın sürüm işi "Secret … is missing" hatasıyla durur.
+- İlk push sonrası: CI (`check`) master ve development'ta geçti. Release işi beklendiği gibi "Secret CSC_LINK is
+  missing" ile durdu, taslak sürüm silindi.
+- Otomatik güvenlik incelemesi 2 bulgu verdi, düzeltildi: güncelleme imza denetimi sıkılaştırıldı; release işleri ve
+  ortamı yalnız master'a kısıtlandı. Düzeltme `development`'a gönderildi; master'a PR ile girecek.
