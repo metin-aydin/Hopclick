@@ -66,5 +66,14 @@ açıp URL'yi verecek; klasör boş olmadığı için geçici klasöre klonlanı
   birleşirse sürüm işi "Secret … missing" ile durur, taslak silinir (zarar yok, tekrar denenebilir: workflow_dispatch).
 - Birleştirme kararı kullanıcıda.
 - Kullanıcı "Burrow'daki bilgileri kullan" dedi: APPLE_TEAM_ID eklendi, kalan dört değer için betik eklendi; kullanıcı çalıştıracak.
-- Beş release gizli değeri tamam (kullanıcı betikle girdi). PR #1 CI yeşil, birleştirilebilir; Claude'un `gh pr merge`
-  çağrısı otomatik izin sınıflandırıcısınca reddedildi, kullanıcının açık onayı/kendisinin birleştirmesi bekleniyor.
+- Beş release gizli değeri tamam (kullanıcı betikle girdi). İlk `gh pr merge` otomatik izin denetimince reddedildi;
+  kullanıcı "Evet, birleştir" deyince PR #1 merge commit ile birleştirildi.
+
+## 2026-11-19 — 0.1.0 yayımlandı
+
+- https://github.com/metin-aydin/Hopclick/releases/tag/v0.1.0 : `Hopclick-0.1.0.dmg` + `.zip`. İndirilen zip'te
+  `spctl`: accepted, Notarized Developer ID, ekip JTRUY8Y2ZF; `stapler validate` geçti.
+- Kullanıcı isteğiyle depo açıklaması (README'deki tanıtım, İngilizce) ve konular (macos, menu-bar-app,
+  multi-monitor, multiple-displays, click-through, accessibility, focus, swift, productivity) `gh repo edit` ile yazıldı.
+- `development` master ile eşitlendi (ff). Açık: gerçek çoklu monitörde izin verilmiş davranış testi; uygulama içi
+  güncellemenin ilk gerçek denemesi 0.1.1 çıkınca olacak.
