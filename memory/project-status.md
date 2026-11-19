@@ -54,3 +54,17 @@ açıp URL'yi verecek; klasör boş olmadığı için geçici klasöre klonlanı
   (önce/sonra, nasıl çalışır, menü), CI ve sürüm iş akışları, PR şablonu, MIT lisansı.
 - Kullanıcının yapması gereken: `release` ortamına imza gizli değerlerini girmek (JumpDesk'tekiyle aynı 5 değer).
   Girilmeden `master`'a birleşen PR'ın sürüm işi "Secret … is missing" hatasıyla durur.
+- İlk push sonrası: CI (`check`) master ve development'ta geçti. Release işi beklendiği gibi "Secret CSC_LINK is
+  missing" ile durdu, taslak sürüm silindi.
+- Otomatik güvenlik incelemesi 2 bulgu verdi, düzeltildi: güncelleme imza denetimi sıkılaştırıldı; release işleri ve
+  ortamı yalnız master'a kısıtlandı. Düzeltme `development`'a gönderildi; master'a PR ile girecek.
+
+## 2026-11-19 — İlk PR
+
+- PR #1 "Hopclick 0.1.0" (development → master) açıldı; açıklaması 0.1.0 sürüm notu (İngilizce, kullanıcıya yönelik).
+- `release` ortamında gizli değer yok (API ile denetlendi). Kullanıcı değerleri girmeden PR birleştirilmemeli;
+  birleşirse sürüm işi "Secret … missing" ile durur, taslak silinir (zarar yok, tekrar denenebilir: workflow_dispatch).
+- Birleştirme kararı kullanıcıda.
+- Kullanıcı "Burrow'daki bilgileri kullan" dedi: APPLE_TEAM_ID eklendi, kalan dört değer için betik eklendi; kullanıcı çalıştıracak.
+- Beş release gizli değeri tamam (kullanıcı betikle girdi). PR #1 CI yeşil, birleştirilebilir; Claude'un `gh pr merge`
+  çağrısı otomatik izin sınıflandırıcısınca reddedildi, kullanıcının açık onayı/kendisinin birleştirmesi bekleniyor.

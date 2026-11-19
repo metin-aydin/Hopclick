@@ -40,7 +40,7 @@ kapalıdır; `v*` sürüm etiketleri silinemez ve taşınamaz. Geliştirme kalı
 doğrudan push serbest). `development` → `master` PR'ı birleşince yeni sürüm yayımlanır
 (`.github/workflows/release.yml`); dal silinmez. Sonraki tur:
 `git checkout development && git pull && git merge --ff-only origin/master`.
-macOS imza gizli değerleri yalnız korunan dallardan çalışan `release` ortamındadır. Ayrıntı: `memory/release-update.md`.
+macOS imza gizli değerleri yalnız `master` dalından çalışan `release` ortamındadır. Ayrıntı: `memory/release-update.md`.
 
 ## ⛔ KURAL: Arayüz metinlerinde her kelimenin baş harfi büyük
 
