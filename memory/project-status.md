@@ -66,3 +66,5 @@ açıp URL'yi verecek; klasör boş olmadığı için geçici klasöre klonlanı
   birleşirse sürüm işi "Secret … missing" ile durur, taslak silinir (zarar yok, tekrar denenebilir: workflow_dispatch).
 - Birleştirme kararı kullanıcıda.
 - Kullanıcı "Burrow'daki bilgileri kullan" dedi: APPLE_TEAM_ID eklendi, kalan dört değer için betik eklendi; kullanıcı çalıştıracak.
+- Beş release gizli değeri tamam (kullanıcı betikle girdi). PR #1 CI yeşil, birleştirilebilir; Claude'un `gh pr merge`
+  çağrısı otomatik izin sınıflandırıcısınca reddedildi, kullanıcının açık onayı/kendisinin birleştirmesi bekleniyor.

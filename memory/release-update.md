@@ -18,6 +18,10 @@ JumpDesk'teki gibi. JumpDesk'in ayarları GitHub API'den okunup birebir uyguland
   `.github/scripts/set-release-secrets.sh <DeveloperID.p12>` ile girilir (gizli istem, stdin ile `gh secret set`).
   Claude parola/anahtar girmez; imza malzemesi bu Mac'te yok (Burrow'da `~/Downloads/apple-signing-*.zip` idi,
   sonra silindi, aslı kullanıcıda).
+  2026-11-19 (sonra): kullanıcı zip'i yeniden Downloads'a koydu; `~/Downloads/hopclick-signing/` altına açıldı.
+  Burrow'daki gibi .p12 parolaları bilinmediği için betik `developer-id.key cert.pem` kipinde kullanıcının terminal
+  sekmesinde başlatıldı (anahtar-sertifika eşleşmesi geçti); parolaları kullanıcı yazdı. **Beş gizli değer de
+  `release` ortamında** (20:33 UTC, `gh secret list --env release`). Açılan klasör ve zip Downloads'tan silindi.
 - Birleştirmeden sonra dal silinmez. Sonraki tur: `git checkout development && git pull && git merge --ff-only origin/master`.
 
 ## Sürüm akışı (`.github/workflows/release.yml`)
