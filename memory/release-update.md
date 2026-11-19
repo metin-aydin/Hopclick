@@ -13,6 +13,11 @@ JumpDesk'teki gibi. JumpDesk'in ayarları GitHub API'den okunup birebir uyguland
   "korunan dallar" seçeneği yeterli değildi). `release.yml`'deki işler ayrıca `github.ref == refs/heads/master`
   koşuluyla korunur (elle başlatma da yalnız master'dan); macOS imza gizli değerleri burada (`CSC_LINK` base64 p12,
   `CSC_KEY_PASSWORD`, `APPLE_ID`, `APPLE_APP_SPECIFIC_PASSWORD`, `APPLE_TEAM_ID`). Değerleri kullanıcı girer.
+  2026-11-19: `APPLE_TEAM_ID` = Burrow'daki ekip (`JTRUY8Y2ZF`) Claude tarafından eklendi. Parolalı dört değer
+  (`CSC_LINK`, `CSC_KEY_PASSWORD`, `APPLE_ID`, `APPLE_APP_SPECIFIC_PASSWORD`) Burrow'daki gibi kullanıcı tarafından
+  `.github/scripts/set-release-secrets.sh <DeveloperID.p12>` ile girilir (gizli istem, stdin ile `gh secret set`).
+  Claude parola/anahtar girmez; imza malzemesi bu Mac'te yok (Burrow'da `~/Downloads/apple-signing-*.zip` idi,
+  sonra silindi, aslı kullanıcıda).
 - Birleştirmeden sonra dal silinmez. Sonraki tur: `git checkout development && git pull && git merge --ff-only origin/master`.
 
 ## Sürüm akışı (`.github/workflows/release.yml`)

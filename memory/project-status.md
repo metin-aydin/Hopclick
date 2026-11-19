@@ -65,3 +65,4 @@ açıp URL'yi verecek; klasör boş olmadığı için geçici klasöre klonlanı
 - `release` ortamında gizli değer yok (API ile denetlendi). Kullanıcı değerleri girmeden PR birleştirilmemeli;
   birleşirse sürüm işi "Secret … missing" ile durur, taslak silinir (zarar yok, tekrar denenebilir: workflow_dispatch).
 - Birleştirme kararı kullanıcıda.
+- Kullanıcı "Burrow'daki bilgileri kullan" dedi: APPLE_TEAM_ID eklendi, kalan dört değer için betik eklendi; kullanıcı çalıştıracak.
