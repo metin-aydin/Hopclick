@@ -58,3 +58,10 @@ açıp URL'yi verecek; klasör boş olmadığı için geçici klasöre klonlanı
   missing" ile durdu, taslak sürüm silindi.
 - Otomatik güvenlik incelemesi 2 bulgu verdi, düzeltildi: güncelleme imza denetimi sıkılaştırıldı; release işleri ve
   ortamı yalnız master'a kısıtlandı. Düzeltme `development`'a gönderildi; master'a PR ile girecek.
+
+## 2026-11-19 — İlk PR
+
+- PR #1 "Hopclick 0.1.0" (development → master) açıldı; açıklaması 0.1.0 sürüm notu (İngilizce, kullanıcıya yönelik).
+- `release` ortamında gizli değer yok (API ile denetlendi). Kullanıcı değerleri girmeden PR birleştirilmemeli;
+  birleşirse sürüm işi "Secret … missing" ile durur, taslak silinir (zarar yok, tekrar denenebilir: workflow_dispatch).
+- Birleştirme kararı kullanıcıda.
