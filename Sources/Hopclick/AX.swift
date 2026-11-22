@@ -7,9 +7,9 @@ enum AX {
     /// the mouse for long.
     static let messagingTimeout: Float = 0.08
 
-    static func application(_ pid: pid_t) -> AXUIElement {
+    static func application(_ pid: pid_t, timeout: Float = messagingTimeout) -> AXUIElement {
         let element = AXUIElementCreateApplication(pid)
-        AXUIElementSetMessagingTimeout(element, messagingTimeout)
+        AXUIElementSetMessagingTimeout(element, timeout)
         return element
     }
 

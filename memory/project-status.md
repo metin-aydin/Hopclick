@@ -66,5 +66,49 @@ açıp URL'yi verecek; klasör boş olmadığı için geçici klasöre klonlanı
   birleşirse sürüm işi "Secret … missing" ile durur, taslak silinir (zarar yok, tekrar denenebilir: workflow_dispatch).
 - Birleştirme kararı kullanıcıda.
 - Kullanıcı "Burrow'daki bilgileri kullan" dedi: APPLE_TEAM_ID eklendi, kalan dört değer için betik eklendi; kullanıcı çalıştıracak.
-- Beş release gizli değeri tamam (kullanıcı betikle girdi). PR #1 CI yeşil, birleştirilebilir; Claude'un `gh pr merge`
-  çağrısı otomatik izin sınıflandırıcısınca reddedildi, kullanıcının açık onayı/kendisinin birleştirmesi bekleniyor.
+- Beş release gizli değeri tamam (kullanıcı betikle girdi). İlk `gh pr merge` otomatik izin denetimince reddedildi;
+  kullanıcı "Evet, birleştir" deyince PR #1 merge commit ile birleştirildi.
+
+## 2026-11-19 — 0.1.0 yayımlandı
+
+- https://github.com/metin-aydin/Hopclick/releases/tag/v0.1.0 : `Hopclick-0.1.0.dmg` + `.zip`. İndirilen zip'te
+  `spctl`: accepted, Notarized Developer ID, ekip JTRUY8Y2ZF; `stapler validate` geçti.
+- Kullanıcı isteğiyle depo açıklaması (README'deki tanıtım, İngilizce) ve konular (macos, menu-bar-app,
+  multi-monitor, multiple-displays, click-through, accessibility, focus, swift, productivity) `gh repo edit` ile yazıldı.
+- `development` master ile eşitlendi (ff). Açık: gerçek çoklu monitörde izin verilmiş davranış testi; uygulama içi
+  güncellemenin ilk gerçek denemesi 0.1.1 çıkınca olacak.
+
+## 2026-11-22 — Hover modu "her zaman çalışmıyor"
+
+- Kullanıcı: "Focus Display Under Pointer" diğer monitöre geçince her zaman çalışmıyor; loglara bakarak incele.
+- Kullanıcının ayarları: `enabled=1`, `hoverFocus=1`, `scope=everywhere`; çalışan kopya `/Applications/Hopclick.app` (0.1.0).
+- Bulgu: Hopclick hiç log yazmıyordu (3 saatlik sistem logunda iz yok). Kodda kök neden bulundu: tek seferlik deneme
+  (ayrıntı [[implementation-notes]] "Hover modu"). Düzeltme + `os.Logger` loglama eklendi, `swift test` 16/16 geçti,
+  `build/Hopclick.app` (0.1.1-dev, ad-hoc) derlendi. Commit yapılmadı; kullanıcının gerçek monitörde denemesi bekleniyor.
+- Kullanıcı yeni derlemeyi `build/Hopclick.app`'tan açtı (pid 80951). İlk 3 dakikada `notice` log yok: ya henüz
+  etkinleştirme olmadı ya da ad-hoc imza yüzünden Erişilebilirlik izni yeniden verilmeli. Canlı log izlemesi önerildi.
+- Kullanıcının canlı logu (2026-11-22 22:32): ilk hover etkinleştirmesi Chrome (pid 3922) `ready=false in 221 ms`,
+  ardından imleç her durduğunda `retry later: focusDisplayUnknown`. Tıklamada Claude (pid 18502) de `ready=false 243 ms`.
+- Kök neden 2: `ClickPolicy.focusDisplay` öndeki uygulamanın *ilk* sıradan penceresini alıyordu; o pencere hiçbir ekrana
+  düşmüyorsa yedeğe geçmeden nil dönüyordu. Düzeltildi: ekrana düşmeyen pencereler atlanıyor (2 yeni test, 18/18).
+  Varsayım (Chrome'un ekran dışı penceresi) henüz doğrulanmadı; `focusDisplayUnknown` logu artık öndeki pid'in
+  pencerelerini ve ekranları yazıyor. Doğrulama sırasında yalnız 1 ekran bağlıydı, yeniden üretilemedi.
+- Açık: `ready=false` — Chrome/Claude 200 ms'lik bütçede `AXFrontmost` + `AXFocusedWindow == hedef` koşulunu
+  sağlamıyor. Pencere eşleşmesi (CG sınırı ↔ AX çerçevesi) veya Electron/Chrome'un odak bildirimi şüpheli; incelenmedi.
+- `ready=false` incelendi (kullanıcı "önce ready=false'a bak" dedi). Neden: bekleme döngüsü, etkinleşmekte olan
+  uygulamaya yapılan ve bloke olan AX çağrılarıyla bütçeyi tüketiyordu. Düzeltme: frontmost sinyali didActivate
+  bildiriminden, yoklama zaman aşımı 25 ms, hover bütçesi 600 ms, ayrıntılı Outcome logu. 18/18 test,
+  `build/Hopclick.app` yeniden derlendi. Çoklu monitörde henüz denenmedi; commit yok. Özel API
+  (`_SLPSSetFrontProcessWithOptions`, AutoRaise/yabai) gerekirse bir sonraki seçenek, kullanıcıya sorulmadı.
+- 2026-11-23: kullanıcı yeni derlemeyi iki monitörde deneyeceğini söyledi; logu bekleniyor.
+- 2026-11-23 kullanıcı logu (3 ekran: ana 1728, sağ 1920, sol 1600): tüm etkinleştirmeler `ready=true` (10–180 ms,
+  uç değerler 356/704 ms); `focusDisplayUnknown` yok. Yeni hata: Chrome'u öne aldıktan sonra Claude ekranına dönünce
+  `done: sameDisplay`. Neden ve çözüm: Chrome yardımcı pencereleri → `HelperWindows` (bkz. [[implementation-notes]]).
+  19/19 test, `build/Hopclick.app` derlendi; kullanıcı denemesi bekleniyor, commit yok.
+- 2026-11-23 01:40 kullanıcı logu (HelperWindows'lu derleme): 40 ekran geçişinin hepsinde Chrome ↔ Claude
+  etkinleştirmesi oldu, hepsi `ready=true` (6–160 ms). Arada görülen `done: sameDisplay` satırları aynı geçişteki
+  ikinci duruşun zararsız sonucu (etkinleştirme zaten yapılmış). Hover sorunu çözüldü sayılır. Açık: Chrome sekme
+  şeridi bölgesi (`window matched: false`), uzun süreli kullanım. Commit henüz yok.
+- 2026-11-23: kullanıcı isteği "son build'i sil, push'la, master'a merge'le, yeni sürüm yayımlansın". `build/` silindi
+  (çalışan geliştirme kopyası kapatıldı; /Applications'taki 0.1.0 güncellemeyle 0.1.1'e geçecek). development → master
+  PR'ı açılıp CI geçince birleştirilecek; VERSION 0.1.0 kaldığı için sürüm betiği 0.1.1 üretir.

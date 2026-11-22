@@ -39,6 +39,32 @@ final class ClickPolicyTests: XCTestCase {
         XCTAssertEqual(decision, .activate(other, clickDisplay: left))
     }
 
+    func testFrontmostWindowOutsideEveryDisplayIsSkipped() {
+        // Chrome keeps an ordinary window off all displays; its real window is on the left display.
+        let hidden = window(11, pid: 100, CGRect(x: -20000, y: -20000, width: 10, height: 10))
+        XCTAssertEqual(ClickPolicy.focusDisplay(frontmostPID: 100, windows: [hidden, editor, browser], displays: displays),
+                       left)
+        let decision = ClickPolicy.decide(context(CGPoint(x: 1300, y: 300), [hidden, editor, browser]))
+        XCTAssertEqual(decision, .activate(browser, clickDisplay: right))
+    }
+
+    func testFrontmostWithOnlyOffDisplayWindowsFallsBackToTopmostWindow() {
+        let hidden = window(11, pid: 300, CGRect(x: -20000, y: -20000, width: 10, height: 10))
+        XCTAssertEqual(ClickPolicy.focusDisplay(frontmostPID: 300, windows: [hidden, browser, editor], displays: displays),
+                       right)
+    }
+
+    func testHelperWindowsAreIgnoredForFocusAndLookedThrough() {
+        // Chrome frontmost with its real window on the right; a helper window of it sits on the left display, above
+        // the editor.
+        let chromeHelper = WindowInfo(id: 21, pid: 200, layer: 0, bounds: CGRect(x: 0, y: 63, width: 1000, height: 41),
+                                      isHelper: true)
+        XCTAssertEqual(ClickPolicy.focusDisplay(frontmostPID: 200, windows: [chromeHelper, browser, editor],
+                                                displays: displays), right)
+        let decision = ClickPolicy.decide(context(CGPoint(x: 300, y: 80), [chromeHelper, browser, editor], front: 200))
+        XCTAssertEqual(decision, .activate(editor, clickDisplay: left))
+    }
+
     func testCommandOrControlClickIsLeftAlone() {
         let decision = ClickPolicy.decide(context(CGPoint(x: 1300, y: 300), [editor, browser], modifier: true))
         XCTAssertEqual(decision, .pass(.modifierHeld))

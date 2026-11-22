@@ -9,18 +9,23 @@ public struct WindowInfo: Equatable, Sendable {
     public let bounds: CGRect
     public let alpha: Double
     public let ownerName: String
+    /// A layer-0 window that Accessibility reports as not a real window (subrole `AXUnknown`). Chrome keeps several:
+    /// toolbar and popup hosts, some left on a display where Chrome shows no window at all.
+    public var isHelper: Bool
 
-    public init(id: UInt32, pid: Int32, layer: Int, bounds: CGRect, alpha: Double = 1, ownerName: String = "") {
+    public init(id: UInt32, pid: Int32, layer: Int, bounds: CGRect, alpha: Double = 1, ownerName: String = "",
+                isHelper: Bool = false) {
         self.id = id
         self.pid = pid
         self.layer = layer
         self.bounds = bounds
         self.alpha = alpha
         self.ownerName = ownerName
+        self.isHelper = isHelper
     }
 
     /// Ordinary document/app windows live on layer 0.
-    public var isOrdinary: Bool { layer == 0 && alpha > 0 }
+    public var isOrdinary: Bool { layer == 0 && alpha > 0 && !isHelper }
 }
 
 /// Window-server layers that matter for the click policy.
