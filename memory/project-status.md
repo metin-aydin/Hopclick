@@ -112,3 +112,7 @@ açıp URL'yi verecek; klasör boş olmadığı için geçici klasöre klonlanı
 - 2026-11-23: kullanıcı isteği "son build'i sil, push'la, master'a merge'le, yeni sürüm yayımlansın". `build/` silindi
   (çalışan geliştirme kopyası kapatıldı; /Applications'taki 0.1.0 güncellemeyle 0.1.1'e geçecek). development → master
   PR'ı açılıp CI geçince birleştirilecek; VERSION 0.1.0 kaldığı için sürüm betiği 0.1.1 üretir.
+- 2026-11-23: PR #2 "Hopclick 0.1.1" CI geçince merge commit ile birleştirildi. Sürüm yayımlandı:
+  https://github.com/metin-aydin/Hopclick/releases/tag/v0.1.1 (dmg + zip). İndirilen zip: spctl accepted, Notarized
+  Developer ID, JTRUY8Y2ZF; stapler validate geçti. development master'a ff ile eşitlendi. /Applications'taki 0.1.0
+  bu sürümle uygulama içi güncellemenin ilk gerçek denemesi olacak.
