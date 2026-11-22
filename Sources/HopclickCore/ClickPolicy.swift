@@ -85,19 +85,27 @@ public enum ClickPolicy {
     }
 
     /// The window that would receive a click at `point`: the front-most visible window under it, looking through
-    /// full-display backdrops and the cursor/overlay layers.
+    /// full-display backdrops, helper windows and the cursor/overlay layers.
     public static func topmostWindow(at point: CGPoint, windows: [WindowInfo], displays: [CGRect]) -> WindowInfo? {
         windows.first { w in
-            w.alpha > 0 && w.layer >= 0 && w.layer < WindowLayer.cursorAndAbove
+            w.alpha > 0 && w.layer >= 0 && w.layer < WindowLayer.cursorAndAbove && !w.isHelper
                 && w.bounds.contains(point) && !Geometry.isBackdrop(w, displays: displays)
         }
     }
 
     /// The display that holds focus: the one showing most of the frontmost application's front window, or, when
     /// that application shows no window (Finder after a desktop click), the one with the topmost ordinary window.
+    /// Windows that lie on no display are skipped: taking such a window as the front window left the focus display
+    /// unknown, and hover focus then never acted (seen with Chrome frontmost, 2026-11-22).
     public static func focusDisplay(frontmostPID: Int32?, windows: [WindowInfo], displays: [CGRect]) -> CGRect? {
-        let window = frontmostPID.flatMap { frontWindow(of: $0, in: windows) } ?? windows.first { $0.isOrdinary }
-        return window.flatMap { Geometry.display(mostlyCovering: $0.bounds, in: displays) }
+        func display(of window: WindowInfo) -> CGRect? {
+            window.isOrdinary ? Geometry.display(mostlyCovering: window.bounds, in: displays) : nil
+        }
+        if let pid = frontmostPID,
+           let found = windows.lazy.filter({ $0.pid == pid }).compactMap(display(of:)).first {
+            return found
+        }
+        return windows.lazy.compactMap(display(of:)).first
     }
 
     public static func frontWindow(of pid: Int32, in windows: [WindowInfo]) -> WindowInfo? {

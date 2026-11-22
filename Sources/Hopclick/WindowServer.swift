@@ -17,7 +17,8 @@ enum WindowServer {
             else { return nil }
             return WindowInfo(id: id, pid: pid, layer: layer, bounds: bounds,
                               alpha: (info[kCGWindowAlpha as String] as? Double) ?? 1,
-                              ownerName: (info[kCGWindowOwnerName as String] as? String) ?? "")
+                              ownerName: (info[kCGWindowOwnerName as String] as? String) ?? "",
+                              isHelper: HelperWindows.shared.isHelper(id))
         }
     }
 
